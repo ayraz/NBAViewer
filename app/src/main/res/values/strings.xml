@@ -1,3 +1,23 @@
 <resources>
     <string name="app_name">NBA Viewer</string>
+    <string name="waiting_for_items_to_load_from_api">Waiting for items to load from API</string>
+    <string name="nba_players_screen_title">NBA Players</string>
+    <string name="player_details_screen_title">Player Details</string>
+    <string name="team_details_screen_title">Team Details</string>
+    <string name="back_button_desc">Back Button</string>
+    <string name="unknown">Unknown</string>
+    <string name="division_label">Division: %1$s</string>
+    <string name="conference_label">Conference: %1$s</string>
+    <string name="city_label">City: %1$s</string>
+    <string name="full_name_label">Full Name: %1$s</string>
+    <string name="abbreviation_label">Abbreviation: %1$s</string>
+    <string name="team_name_label">Team Name: %1$s</string>
+    <string name="team_logo_image_desc">Team Logo Image</string>
+    <string name="position_label">Position: %1$s</string>
+    <string name="team_label">Team: %1$s</string>
+    <string name="height_feet_label">Height Feet: %1$s</string>
+    <string name="height_inches_label">Height Inches: %1$s</string>
+    <string name="weight_pounds_label">Weight Pounds: %1$s</string>
+    <string name="player_label">Player: %1$s %2$s</string>
+    <string name="player_logo_image_desc">Player Logo Image</string>
 </resources>

@@ -13,6 +13,9 @@ import com.example.nbaviewer.NBAViewerApplication
 import com.example.nbaviewer.data.NBARepository
 import com.example.nbaviewer.model.Player
 import com.example.nbaviewer.model.Team
+import com.example.nbaviewer.ui.state.PlayerDetailUiState
+import com.example.nbaviewer.ui.state.PlayerItemUiState
+import com.example.nbaviewer.ui.state.TeamDetailUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,14 +39,14 @@ class NBAViewerViewModel(private val repository: NBARepository) : ViewModel() {
     /**
      * Player detail state with last selected player
      */
-    private val _playerState = MutableStateFlow(Player())
-    val playerDetailState: StateFlow<Player> = _playerState.asStateFlow()
+    private val _playerState = MutableStateFlow(PlayerDetailUiState())
+    val playerDetailState: StateFlow<PlayerDetailUiState> = _playerState.asStateFlow()
 
     /**
      * Team detail state with last selected team
      */
-    private val _teamState = MutableStateFlow(Team())
-    val teamDetailState: StateFlow<Team> = _teamState.asStateFlow()
+    private val _teamState = MutableStateFlow(TeamDetailUiState())
+    val teamDetailState: StateFlow<TeamDetailUiState> = _teamState.asStateFlow()
 
     /**
      * Get players on init so we can display status/list immediately.
@@ -52,18 +55,10 @@ class NBAViewerViewModel(private val repository: NBARepository) : ViewModel() {
         getNBAPlayers()
     }
 
-    fun getNBAPlayers(): Flow<PagingData<PlayerUiState>> {
+    fun getNBAPlayers(): Flow<PagingData<PlayerItemUiState>> {
         return repository.getPagedPlayersFlow()
             .map {
-                it.map { player ->
-                    PlayerUiState(
-                        player.firstName,
-                        player.lastName,
-                        player.position,
-                        player.team.name,
-                        player.id
-                    )
-                }
+                it.map { player -> PlayerItemUiState(player)}
             }
             .flowOn(Dispatchers.IO) // don't block main thread
             .cachedIn(viewModelScope)
@@ -74,7 +69,9 @@ class NBAViewerViewModel(private val repository: NBARepository) : ViewModel() {
             Dispatchers.IO // don't block main thread
         ) {
             // TODO: handle errors
-            _playerState.value = repository.getPlayer(id)
+            _playerState.value = repository.getPlayer(id).let {
+                PlayerDetailUiState(it)
+            }
         }
     }
 
@@ -83,8 +80,18 @@ class NBAViewerViewModel(private val repository: NBARepository) : ViewModel() {
             Dispatchers.IO
         ) {
             // TODO: handle errors
-            _teamState.value = repository.getTeam(id)
+            _teamState.value = repository.getTeam(id).let {
+                TeamDetailUiState(it)
+            }
         }
+    }
+
+    fun getPlayerDetailImageUrl(): String {
+        return repository.getPlayerDetailImageUrl()
+    }
+
+    fun getTeamDetailImageUrl(): String {
+        return repository.getTeamDetailImageUrl()
     }
 
     /**

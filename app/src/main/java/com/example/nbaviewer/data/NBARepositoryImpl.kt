@@ -28,4 +28,18 @@ class NBARepositoryImpl(private val apiService: NBAApiService) : NBARepository {
     override suspend fun getTeam(id: Long): Team {
         return apiService.getTeam(id.toInt())
     }
+
+    override fun getPlayerDetailImageUrl(): String {
+        return PLAYER_DETAIL_IMAGE_URL
+    }
+
+    override fun getTeamDetailImageUrl(): String {
+        return TEAM_DETAIL_IMAGE_URL
+    }
+
+    companion object {
+        // Static URLs for exemplar use of Glide
+        private const val PLAYER_DETAIL_IMAGE_URL = "https://t.ly/85IG3"
+        private const val TEAM_DETAIL_IMAGE_URL = "https://t.ly/vxpnv"
+    }
 }

@@ -12,4 +12,8 @@ interface NBARepository {
     suspend fun getPlayer(id: Long): Player
 
     suspend fun getTeam(id: Long): Team
+
+    fun getPlayerDetailImageUrl(): String
+
+    fun getTeamDetailImageUrl(): String
 }

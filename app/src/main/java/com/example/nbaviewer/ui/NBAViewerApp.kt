@@ -1,7 +1,11 @@
-@file:OptIn(ExperimentalGlideComposeApi::class, ExperimentalMaterial3Api::class)
+@file:OptIn(
+    ExperimentalGlideComposeApi::class,
+    ExperimentalMaterial3Api::class,
+)
 
 package com.example.nbaviewer.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,20 +49,18 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.example.nbaviewer.model.Player
-import com.example.nbaviewer.model.Team
-
-// Static URLs for exemplar use of Glide
-const val TEAM_DETAIL_IMAGE_URL = "https://img.freepik.com/premium-vector/basketball-team-logo_147887-185.jpg"
-const val PLAYER_DETAIL_IMAGE_URL = "https://imageio.forbes.com/specials-images/imageserve/5e42ca594637aa0007e87b31/hero-nba-teams-lebron-harden-curry-leonard-kyrie-Anton-Klusener/0x0.jpg"
+import com.example.nbaviewer.R
+import com.example.nbaviewer.ui.state.PlayerDetailUiState
+import com.example.nbaviewer.ui.state.PlayerItemUiState
+import com.example.nbaviewer.ui.state.TeamDetailUiState
 
 /**
  * enum values that represent the screens in the app
  */
-enum class NBAScreen(val title: String) {
-    PlayerList(title = "NBA Players"),
-    PlayerDetail(title = "Player Details"),
-    TeamDetail(title = "Team Details")
+enum class NBAScreen(@StringRes val title: Int) {
+    PlayerList(title = R.string.nba_players_screen_title),
+    PlayerDetail(title = R.string.player_details_screen_title),
+    TeamDetail(title = R.string.team_details_screen_title)
 }
 
 /**
@@ -72,7 +75,7 @@ fun NBAViewerAppBar(
     scrollBehavior: TopAppBarScrollBehavior
 ) {
     TopAppBar(
-        title = { Text(currentScreen.title) },
+        title = { Text(stringResource(id = currentScreen.title)) },
         scrollBehavior = scrollBehavior,
         colors = TopAppBarDefaults.mediumTopAppBarColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -83,7 +86,7 @@ fun NBAViewerAppBar(
                 IconButton(onClick = navigateUp) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBack,
-                        contentDescription = "Back Button"
+                        contentDescription = stringResource(R.string.back_button_desc)
                     )
                 }
             }
@@ -132,6 +135,7 @@ fun NBAViewerApp() {
             composable(route = NBAScreen.PlayerDetail.name) {
                 PlayerDetail(
                     player = nbaViewModel.playerDetailState.collectAsState().value,
+                    imageUrl = nbaViewModel.getPlayerDetailImageUrl(),
                     onTeamNavigate = { id ->
                         nbaViewModel.loadTeam(id)
                         navController.navigate(NBAScreen.TeamDetail.name)
@@ -140,7 +144,8 @@ fun NBAViewerApp() {
             }
             composable(route = NBAScreen.TeamDetail.name) {
                 TeamDetail(
-                    nbaViewModel.teamDetailState.collectAsState().value
+                    team = nbaViewModel.teamDetailState.collectAsState().value,
+                    imageUrl = nbaViewModel.getTeamDetailImageUrl()
                 )
             }
         }
@@ -150,7 +155,7 @@ fun NBAViewerApp() {
 // Composable displaying lazily paginated list of players.
 @Composable
 fun PlayerListScreen(
-    pagingItems: LazyPagingItems<PlayerUiState>,
+    pagingItems: LazyPagingItems<PlayerItemUiState>,
     onPlayerClicked: (Long) -> Unit,
     modifier: Modifier
 ) {
@@ -160,7 +165,7 @@ fun PlayerListScreen(
         if (pagingItems.loadState.refresh == LoadState.Loading) {
             item {
                 Text(
-                    text = "Waiting for items to load from API",
+                    text = stringResource(R.string.waiting_for_items_to_load_from_api),
                     modifier = Modifier
                         .fillMaxWidth()
                         .wrapContentWidth(Alignment.CenterHorizontally)
@@ -189,7 +194,7 @@ fun PlayerListScreen(
 
 @Composable
 fun PlayerCard(
-    player: PlayerUiState,
+    player: PlayerItemUiState,
     onPlayerClicked: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -208,18 +213,20 @@ fun PlayerCard(
             modifier = Modifier.padding(8.dp)
         ) {
             Text(
-                text = "Player: ${player.firstName} ${player.lastName}",
+                text = stringResource(R.string.player_label, player.firstName, player.lastName),
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp
             )
-            Text(text = "Position: ${player.position.ifBlank { "Unknown" }}")
-            Text(text = "Team: ${player.team}")
+            Text(text = stringResource(R.string.position_label,
+                player.position.ifBlank { stringResource(R.string.unknown) }))
+            Text(text = stringResource(R.string.team_label, player.team))
         }
     }
 }
 
 @Composable
-fun PlayerDetail(player: Player,
+fun PlayerDetail(player: PlayerDetailUiState,
+                 imageUrl: String,
                  onTeamNavigate: (Long) -> Unit,
                  modifier: Modifier = Modifier) {
     Column(
@@ -230,23 +237,31 @@ fun PlayerDetail(player: Player,
             .padding(8.dp)
     ) {
         GlideImage(
-            model = PLAYER_DETAIL_IMAGE_URL,
-            contentDescription = "Player Logo Image",
+            model = imageUrl,
+            contentDescription = stringResource(R.string.player_logo_image_desc),
             modifier = Modifier
         )
         Text(
-            text = "Player: ${player.firstName} ${player.lastName}",
+            text = stringResource(R.string.player_label, player.firstName, player.lastName),
             fontWeight = FontWeight.Bold,
             fontSize = 24.sp
         )
-        Text(text = "Position: ${player.position.ifBlank { "Unknown" }}")
-        Text(text = "Team: ${player.team.name}")
-        Text(text = "Height Feet: ${player.heightFeet ?: "Unknown"}")
-        Text(text = "Height Inches: ${player.heightInches ?: "Unknown"}")
-        Text(text = "Weight Pounds: ${player.weightPounds ?: "Unknown"}")
+        Text(text = stringResource(
+            R.string.position_label,
+            player.position.ifBlank { stringResource(R.string.unknown) }))
+        Text(text = stringResource(R.string.team_label, player.team))
+        Text(text = stringResource(
+            R.string.height_feet_label,
+            player.heightFeet.ifBlank { stringResource(R.string.unknown) }))
+        Text(text = stringResource(
+            R.string.height_inches_label,
+            player.heightInches.ifBlank { stringResource(R.string.unknown) }))
+        Text(text = stringResource(
+            R.string.weight_pounds_label,
+            player.weightPounds.ifBlank { stringResource(R.string.unknown) }))
         Button(
             onClick = {
-                onTeamNavigate(player.team.id)
+                onTeamNavigate(player.teamId)
             },
             modifier = Modifier
         ) {
@@ -256,8 +271,11 @@ fun PlayerDetail(player: Player,
 }
 
 @Composable
-fun TeamDetail(team: Team,
-               modifier: Modifier = Modifier) {
+fun TeamDetail(
+    team: TeamDetailUiState,
+    imageUrl: String,
+    modifier: Modifier = Modifier
+) {
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -266,19 +284,29 @@ fun TeamDetail(team: Team,
             .padding(8.dp)
     ) {
         GlideImage(
-            model = TEAM_DETAIL_IMAGE_URL,
-            contentDescription = "Team Logo Image",
+            model = imageUrl,
+            contentDescription = stringResource(R.string.team_logo_image_desc),
             modifier = Modifier
         )
         Text(
-            text = "Team Name: ${team.name}",
+            text = stringResource(R.string.team_name_label, team.name),
             fontWeight = FontWeight.Bold,
             fontSize = 24.sp
         )
-        Text(text = "Abbreviation: ${team.abbreviation.ifBlank { "Unknown" }}")
-        Text(text = "Full Name: ${team.fullName.ifBlank { "Unknown" }}")
-        Text(text = "City: ${team.city.ifBlank { "Unknown" }}")
-        Text(text = "Conference: ${team.conference.ifBlank { "Unknown" }}")
-        Text(text = "Division: ${team.division.ifBlank { "Unknown" }}")
+        Text(text = stringResource(
+            R.string.abbreviation_label,
+            team.abbreviation.ifBlank { stringResource(R.string.unknown) }))
+        Text(text = stringResource(
+            R.string.full_name_label,
+            team.fullName.ifBlank { stringResource(R.string.unknown) }))
+        Text(text = stringResource(
+            R.string.city_label,
+            team.city.ifBlank { stringResource(R.string.unknown) }))
+        Text(text = stringResource(
+            R.string.conference_label,
+            team.conference.ifBlank { stringResource(R.string.unknown) }))
+        Text(text = stringResource(
+            R.string.division_label,
+            team.division.ifBlank { stringResource(R.string.unknown) }))
     }
 }
