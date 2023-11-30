@@ -2,7 +2,9 @@
 
 package com.example.nbaviewer.ui.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -11,17 +13,18 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import com.example.nbaviewer.R
+import com.example.nbaviewer.ui.component.HeaderTitle
+import com.example.nbaviewer.ui.component.LabeledField
 import com.example.nbaviewer.ui.state.PlayerItemUiState
 
 // Composable displaying lazily paginated list of players.
@@ -34,10 +37,11 @@ fun PlayerListScreen(
     LazyColumn(
         modifier = modifier
     ) {
-        if (pagingItems.loadState.refresh == LoadState.Loading) {
+        if (pagingItems.loadState.append == LoadState.Loading
+            || pagingItems.loadState.refresh == LoadState.Loading
+        ) {
             item {
-                Text(
-                    text = stringResource(R.string.waiting_for_items_to_load_from_api),
+                CircularProgressIndicator(
                     modifier = Modifier
                         .fillMaxWidth()
                         .wrapContentWidth(Alignment.CenterHorizontally)
@@ -49,16 +53,6 @@ fun PlayerListScreen(
             val item = pagingItems[index]
             if (item != null) {
                 PlayerCard(player = item, onPlayerClicked)
-            }
-        }
-
-        if (pagingItems.loadState.append == LoadState.Loading) {
-            item {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentWidth(Alignment.CenterHorizontally)
-                )
             }
         }
     }
@@ -77,19 +71,25 @@ fun PlayerCard(
             .fillMaxWidth()
             .padding(4.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.player_label, player.firstName, player.lastName),
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                painter = painterResource(id = R.drawable.image_placeholder),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.weight(0.5F)
             )
-            Text(
-                text = stringResource(R.string.position_label,
+            Column(
+                modifier = Modifier
+                    .weight(1.5F)
+                    .padding(8.dp)
+            ) {
+                HeaderTitle(title = "${player.firstName} ${player.lastName}")
+
+                LabeledField(stringResource(R.string.position_label),
                     player.position.ifBlank { stringResource(R.string.unknown) })
-            )
-            Text(text = stringResource(R.string.team_label, player.team))
+
+                LabeledField(stringResource(R.string.team_label), player.team)
+            }
         }
     }
 }
