@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,6 +51,9 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.example.nbaviewer.R
+import com.example.nbaviewer.ui.screen.PlayerDetail
+import com.example.nbaviewer.ui.screen.PlayerListScreen
+import com.example.nbaviewer.ui.screen.TeamDetail
 import com.example.nbaviewer.ui.state.PlayerDetailUiState
 import com.example.nbaviewer.ui.state.PlayerItemUiState
 import com.example.nbaviewer.ui.state.TeamDetailUiState
@@ -106,8 +110,9 @@ fun NBAViewerApp() {
     val currentScreen = NBAScreen.valueOf(
         backStackEntry?.destination?.route ?: NBAScreen.PlayerList.name
     )
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-    Scaffold(modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             NBAViewerAppBar(
                 scrollBehavior = scrollBehavior,
@@ -126,6 +131,7 @@ fun NBAViewerApp() {
                     pagingItems = nbaViewModel.getNBAPlayers().collectAsLazyPagingItems(),
                     onPlayerClicked = { id ->
                         nbaViewModel.loadPlayer(id)
+                        scrollBehavior.expandTopAppBar()
                         navController.navigate(NBAScreen.PlayerDetail.name)
                     },
                     modifier = Modifier.fillMaxSize()
@@ -138,6 +144,7 @@ fun NBAViewerApp() {
                     imageUrl = nbaViewModel.getPlayerDetailImageUrl(),
                     onTeamNavigate = { id ->
                         nbaViewModel.loadTeam(id)
+                        scrollBehavior.expandTopAppBar()
                         navController.navigate(NBAScreen.TeamDetail.name)
                     }
                 )
@@ -152,161 +159,6 @@ fun NBAViewerApp() {
     }
 }
 
-// Composable displaying lazily paginated list of players.
-@Composable
-fun PlayerListScreen(
-    pagingItems: LazyPagingItems<PlayerItemUiState>,
-    onPlayerClicked: (Long) -> Unit,
-    modifier: Modifier
-) {
-    LazyColumn(
-        modifier = modifier
-    ) {
-        if (pagingItems.loadState.refresh == LoadState.Loading) {
-            item {
-                Text(
-                    text = stringResource(R.string.waiting_for_items_to_load_from_api),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentWidth(Alignment.CenterHorizontally)
-                )
-            }
-        }
-
-        items(count = pagingItems.itemCount) { index ->
-            val item = pagingItems[index]
-            if (item != null) {
-                PlayerCard(player = item, onPlayerClicked)
-            }
-        }
-
-        if (pagingItems.loadState.append == LoadState.Loading) {
-            item {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentWidth(Alignment.CenterHorizontally)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun PlayerCard(
-    player: PlayerItemUiState,
-    onPlayerClicked: (Long) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        onClick = {
-            onPlayerClicked(player.id)
-        },
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(4.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.player_label, player.firstName, player.lastName),
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp
-            )
-            Text(text = stringResource(R.string.position_label,
-                player.position.ifBlank { stringResource(R.string.unknown) }))
-            Text(text = stringResource(R.string.team_label, player.team))
-        }
-    }
-}
-
-@Composable
-fun PlayerDetail(player: PlayerDetailUiState,
-                 imageUrl: String,
-                 onTeamNavigate: (Long) -> Unit,
-                 modifier: Modifier = Modifier) {
-    Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp)
-    ) {
-        GlideImage(
-            model = imageUrl,
-            contentDescription = stringResource(R.string.player_logo_image_desc),
-            modifier = Modifier
-        )
-        Text(
-            text = stringResource(R.string.player_label, player.firstName, player.lastName),
-            fontWeight = FontWeight.Bold,
-            fontSize = 24.sp
-        )
-        Text(text = stringResource(
-            R.string.position_label,
-            player.position.ifBlank { stringResource(R.string.unknown) }))
-        Text(text = stringResource(R.string.team_label, player.team))
-        Text(text = stringResource(
-            R.string.height_feet_label,
-            player.heightFeet.ifBlank { stringResource(R.string.unknown) }))
-        Text(text = stringResource(
-            R.string.height_inches_label,
-            player.heightInches.ifBlank { stringResource(R.string.unknown) }))
-        Text(text = stringResource(
-            R.string.weight_pounds_label,
-            player.weightPounds.ifBlank { stringResource(R.string.unknown) }))
-        Button(
-            onClick = {
-                onTeamNavigate(player.teamId)
-            },
-            modifier = Modifier
-        ) {
-            Text(text = "Team Details")
-        }
-    }
-}
-
-@Composable
-fun TeamDetail(
-    team: TeamDetailUiState,
-    imageUrl: String,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp)
-    ) {
-        GlideImage(
-            model = imageUrl,
-            contentDescription = stringResource(R.string.team_logo_image_desc),
-            modifier = Modifier
-        )
-        Text(
-            text = stringResource(R.string.team_name_label, team.name),
-            fontWeight = FontWeight.Bold,
-            fontSize = 24.sp
-        )
-        Text(text = stringResource(
-            R.string.abbreviation_label,
-            team.abbreviation.ifBlank { stringResource(R.string.unknown) }))
-        Text(text = stringResource(
-            R.string.full_name_label,
-            team.fullName.ifBlank { stringResource(R.string.unknown) }))
-        Text(text = stringResource(
-            R.string.city_label,
-            team.city.ifBlank { stringResource(R.string.unknown) }))
-        Text(text = stringResource(
-            R.string.conference_label,
-            team.conference.ifBlank { stringResource(R.string.unknown) }))
-        Text(text = stringResource(
-            R.string.division_label,
-            team.division.ifBlank { stringResource(R.string.unknown) }))
-    }
+fun TopAppBarScrollBehavior.expandTopAppBar() {
+    this.state.heightOffset = 0f // expand top bar by resetting its height offset
 }
