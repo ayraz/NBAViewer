@@ -1,24 +1,16 @@
 @file:OptIn(
-    ExperimentalGlideComposeApi::class,
     ExperimentalMaterial3Api::class,
 )
 
 package com.example.nbaviewer.ui
 
+import android.content.Context
+import android.widget.Toast
 import androidx.annotation.StringRes
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,31 +24,22 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.paging.LoadState
-import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
 import com.example.nbaviewer.R
 import com.example.nbaviewer.ui.screen.PlayerDetail
 import com.example.nbaviewer.ui.screen.PlayerListScreen
 import com.example.nbaviewer.ui.screen.TeamDetail
-import com.example.nbaviewer.ui.state.PlayerDetailUiState
-import com.example.nbaviewer.ui.state.PlayerItemUiState
-import com.example.nbaviewer.ui.state.TeamDetailUiState
 
 /**
  * enum values that represent the screens in the app
@@ -139,24 +122,50 @@ fun NBAViewerApp() {
                 )
             }
             composable(route = NBAScreen.PlayerDetail.name) {
-                PlayerDetail(
-                    player = nbaViewModel.playerDetailState.collectAsState().value,
-                    imageUrl = nbaViewModel.getPlayerDetailImageUrl(),
-                    onTeamNavigate = { id ->
-                        nbaViewModel.loadTeam(id)
-                        scrollBehavior.expandTopAppBar()
-                        navController.navigate(NBAScreen.TeamDetail.name)
+                val player = nbaViewModel.playerDetailState.collectAsState().value
+                when {
+                    player.isError -> {
+                        showErrorToast(LocalContext.current)
                     }
-                )
+
+                    player.state != null -> {
+                        PlayerDetail(
+                            player = player.state,
+                            imageUrl = nbaViewModel.getPlayerDetailImageUrl(),
+                            onTeamNavigate = { id ->
+                                nbaViewModel.loadTeam(id)
+                                scrollBehavior.expandTopAppBar()
+                                navController.navigate(NBAScreen.TeamDetail.name)
+                            }
+                        )
+                    }
+                }
             }
             composable(route = NBAScreen.TeamDetail.name) {
-                TeamDetail(
-                    team = nbaViewModel.teamDetailState.collectAsState().value,
-                    imageUrl = nbaViewModel.getTeamDetailImageUrl()
-                )
+                val team = nbaViewModel.teamDetailState.collectAsState().value
+                when {
+                    team.isError -> {
+                        showErrorToast(LocalContext.current)
+                    }
+
+                    team.state != null -> {
+                        TeamDetail(
+                            team = team.state,
+                            imageUrl = nbaViewModel.getTeamDetailImageUrl()
+                        )
+                    }
+                }
             }
         }
     }
+}
+
+fun showErrorToast(context: Context) {
+    Toast.makeText(
+        context,
+        context.getString(R.string.error_has_occurred_while_loading_data),
+        Toast.LENGTH_SHORT
+    ).show();
 }
 
 fun TopAppBarScrollBehavior.expandTopAppBar() {

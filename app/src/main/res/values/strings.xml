@@ -21,4 +21,5 @@
     <string name="player_label">Player</string>
     <string name="player_logo_image_desc">Player Logo Image</string>
     <string name="team_details_btn_text">Team Details</string>
+    <string name="error_has_occurred_while_loading_data">An error has occurred while loading data.</string>
 </resources>

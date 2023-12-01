@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -25,6 +26,7 @@ import androidx.paging.compose.LazyPagingItems
 import com.example.nbaviewer.R
 import com.example.nbaviewer.ui.component.HeaderTitle
 import com.example.nbaviewer.ui.component.LabeledField
+import com.example.nbaviewer.ui.showErrorToast
 import com.example.nbaviewer.ui.state.PlayerItemUiState
 
 // Composable displaying lazily paginated list of players.
@@ -37,6 +39,14 @@ fun PlayerListScreen(
     LazyColumn(
         modifier = modifier
     ) {
+        if (pagingItems.loadState.append is LoadState.Error
+            || pagingItems.loadState.refresh is LoadState.Error
+        ) {
+            item {
+                showErrorToast(LocalContext.current)
+            }
+        }
+
         if (pagingItems.loadState.append == LoadState.Loading
             || pagingItems.loadState.refresh == LoadState.Loading
         ) {
